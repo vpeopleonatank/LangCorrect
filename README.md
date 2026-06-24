@@ -28,11 +28,30 @@ python scripts\quantize_model.py --model-dir models\bartpho-correction-v2-onnx -
 ```
 
 Có thể đặt biến môi trường `VICORRECT_MODEL_DIR` để app dùng artifact ở vị trí khác.
+Mặc định app sẽ ưu tiên `models/bartpho-correction-v2-onnx` để giữ chất lượng gần với model gốc hơn, và chỉ rơi về `models/bartpho-correction-v2-onnx-int8` nếu không có bản ONNX thường.
 
 ## Chạy ứng dụng
 
 ```powershell
 python src\main.py
+```
+
+## Test model Hugging Face thủ công
+
+```powershell
+python scripts\manual_test_hf_model.py
+```
+
+Có thể test nhanh nhiều câu:
+
+```powershell
+python scripts\manual_test_hf_model.py --text "toi dang hoc AI o truong dai hoc" --text "cam on ban rat nhieu"
+```
+
+Hoặc đọc input từ file UTF-8, mỗi dòng một câu:
+
+```powershell
+python scripts\manual_test_hf_model.py --file .scratch\manual-input.txt
 ```
 
 ## Chạy test

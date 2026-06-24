@@ -32,20 +32,24 @@ class ModelArtifactPaths:
     encoder: Path
     decoder: Path
     decoder_with_past: Path
+    sentencepiece_model: Path
+    monolingual_vocab: Path
 
     @classmethod
     def from_dir(cls, model_dir: Path) -> "ModelArtifactPaths":
         encoder = model_dir / "encoder_model.onnx"
         decoder = model_dir / "decoder_model.onnx"
         decoder_with_past = model_dir / "decoder_with_past_model.onnx"
+        sentencepiece_model = model_dir / "sentencepiece.bpe.model"
+        monolingual_vocab = model_dir / "dict.txt"
         required = [
             encoder,
             decoder,
             decoder_with_past,
             model_dir / "config.json",
             model_dir / "tokenizer_config.json",
-            model_dir / "sentencepiece.bpe.model",
-            model_dir / "dict.txt",
+            sentencepiece_model,
+            monolingual_vocab,
         ]
         missing = [path.name for path in required if not path.exists()]
         if missing:
@@ -61,6 +65,36 @@ class ModelArtifactPaths:
             encoder=encoder,
             decoder=decoder,
             decoder_with_past=decoder_with_past,
+            sentencepiece_model=sentencepiece_model,
+            monolingual_vocab=monolingual_vocab,
+        )
+
+
+def _load_local_tokenizer(
+    artifacts: ModelArtifactPaths,
+    *,
+    auto_tokenizer_cls=None,
+    bartpho_tokenizer_cls=None,
+):
+    if auto_tokenizer_cls is None or bartpho_tokenizer_cls is None:
+        from transformers import AutoTokenizer, BartphoTokenizer
+
+        auto_tokenizer_cls = AutoTokenizer
+        bartpho_tokenizer_cls = BartphoTokenizer
+
+    try:
+        return auto_tokenizer_cls.from_pretrained(
+            artifacts.root,
+            local_files_only=True,
+        )
+    except TypeError as exc:
+        # BartPho artifacts sometimes omit enough metadata for AutoTokenizer to
+        # infer the reduced Vietnamese vocabulary path even though the files are present.
+        if "NoneType" not in str(exc):
+            raise
+        return bartpho_tokenizer_cls(
+            vocab_file=str(artifacts.sentencepiece_model),
+            monolingual_vocab_file=str(artifacts.monolingual_vocab),
         )
 
 
@@ -82,17 +116,13 @@ class OfflineCorrectionAdapter:
         provider = self._resolve_provider(self.device)
         try:
             from optimum.onnxruntime import ORTModelForSeq2SeqLM
-            from transformers import AutoTokenizer
         except ImportError as exc:
             raise ModelRuntimeError(
                 "Thiếu thư viện runtime. Hãy cài dependencies bằng `pip install -r requirements.txt`."
             ) from exc
 
         try:
-            self._tokenizer = AutoTokenizer.from_pretrained(
-                artifacts.root,
-                local_files_only=True,
-            )
+            self._tokenizer = _load_local_tokenizer(artifacts)
             self._model = ORTModelForSeq2SeqLM.from_pretrained(
                 artifacts.root,
                 provider=provider,
@@ -124,7 +154,6 @@ class OfflineCorrectionAdapter:
                 **inputs,
                 max_new_tokens=256,
                 num_beams=1,
-                early_stopping=True,
             )
             return self._tokenizer.decode(
                 output_tokens[0],
@@ -148,7 +177,15 @@ def default_model_dir() -> Path:
     if configured:
         return Path(configured)
     repo_root = Path(__file__).resolve().parents[2]
-    return repo_root / "models" / "bartpho-correction-v2-onnx-int8"
+    default_dir = repo_root / "models"
+    candidates = [
+        default_dir / "bartpho-correction-v2-onnx",
+        default_dir / "bartpho-correction-v2-onnx-int8",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 def build_default_adapter(device: str = "cpu") -> OfflineCorrectionAdapter:

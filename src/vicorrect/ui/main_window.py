@@ -205,7 +205,7 @@ class MainWindow(QMainWindow):
 
     def _build_workflow(self) -> CorrectionWorkflow:
         adapter = build_default_adapter(device="cpu")
-        preprocessor = TextPreprocessor(max_tokens=256, token_counter=adapter)
+        preprocessor = TextPreprocessor(max_tokens=16, token_counter=adapter)
         return CorrectionWorkflow(adapter=adapter, preprocessor=preprocessor)
 
     def _start_correction(self) -> None:
