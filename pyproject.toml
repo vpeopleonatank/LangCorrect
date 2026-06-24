@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vicorrect"
+version = "0.1.0"
+description = "Offline Vietnamese text correction desktop app"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "PyQt6>=6.5.0",
+    "torch>=2.2.0",
+    "transformers>=4.35.0",
+    "optimum[onnxruntime]>=1.14.0",
+    "onnxruntime>=1.16.0",
+    "sentencepiece>=0.1.99",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
