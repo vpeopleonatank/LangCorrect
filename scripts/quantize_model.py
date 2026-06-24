@@ -4,6 +4,17 @@ import argparse
 from pathlib import Path
 
 
+SIDECAR_FILES = (
+    "config.json",
+    "generation_config.json",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "sentencepiece.bpe.model",
+    "dict.txt",
+)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Quantize exported ONNX files to INT8.")
     parser.add_argument(
@@ -34,14 +45,7 @@ def main() -> int:
             weight_type=QuantType.QInt8,
         )
 
-    for sidecar in [
-        "config.json",
-        "generation_config.json",
-        "special_tokens_map.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "sentencepiece.bpe.model",
-    ]:
+    for sidecar in SIDECAR_FILES:
         source = args.model_dir / sidecar
         if source.exists():
             target = args.output_dir / sidecar

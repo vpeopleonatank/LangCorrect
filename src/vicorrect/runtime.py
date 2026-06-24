@@ -44,12 +44,14 @@ class ModelArtifactPaths:
             decoder_with_past,
             model_dir / "config.json",
             model_dir / "tokenizer_config.json",
+            model_dir / "sentencepiece.bpe.model",
+            model_dir / "dict.txt",
         ]
         missing = [path.name for path in required if not path.exists()]
         if missing:
             joined = ", ".join(missing)
             raise ModelSetupError(
-                "Thiếu artifact model offline tại "
+                "Thiếu artifact model offline/tokenizer tại "
                 f"`{model_dir}` ({joined}). "
                 "Hãy chạy scripts/download_model.py, scripts/convert_to_onnx.py và "
                 "scripts/quantize_model.py hoặc đặt `VICORRECT_MODEL_DIR` trỏ tới artifact đã chuẩn bị."

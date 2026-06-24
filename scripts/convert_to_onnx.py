@@ -5,6 +5,17 @@ from pathlib import Path
 import shutil
 
 
+SIDECAR_FILES = (
+    "config.json",
+    "generation_config.json",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "sentencepiece.bpe.model",
+    "dict.txt",
+)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Export a local seq2seq model to ONNX.")
     parser.add_argument(
@@ -33,14 +44,7 @@ def main() -> int:
         device="cpu",
     )
 
-    for sidecar in [
-        "config.json",
-        "generation_config.json",
-        "special_tokens_map.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "sentencepiece.bpe.model",
-    ]:
+    for sidecar in SIDECAR_FILES:
         source = args.model_dir / sidecar
         if source.exists():
             shutil.copy2(source, args.output_dir / sidecar)
